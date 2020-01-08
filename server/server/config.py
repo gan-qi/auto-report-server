@@ -4,7 +4,6 @@ import sys
 
 from server import app
 
-
 SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(24))
 
 dev_db = 'sqlite:////' + os.path.join(os.path.dirname(app.root_path), 'data.db')

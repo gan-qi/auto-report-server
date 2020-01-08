@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import request
+from flask import request, send_file
 
 from server import app, db
 from server.models import USER, TASK, LOG, MAILCONFIG
@@ -7,6 +7,9 @@ from server.models import USER, TASK, LOG, MAILCONFIG
 from flask_restful import Resource, Api, reqparse
 from datetime import datetime
 from pprint import pprint
+from werkzeug.utils import secure_filename
+
+import os
 
 api = Api(app)
 
@@ -161,6 +164,43 @@ class mailConfig(Resource):
                 }
 
 
+class Upload(Resource):
+    """处理上传文件
+    """
+
+    def option(self):
+        return {
+                'code': 20000
+                }
+
+    def post(self):
+        targetFile = request.files['file']
+        targetFile.save(os.path.join(app.root_path + '/uploads',
+            targetFile.filename))
+        return {
+                'code': 20000
+                }
+
+
+class Downloads(Resource):
+    """提供文件下载
+    """
+
+    def option(self):
+        return {
+                'code': 20000
+                }
+
+    def post(self):
+        data = request.get_json(force=True)
+        # 生成文件...
+        filename = str(datetime.now().strftime('%Y-%m-%d')) \
+                + str(userId) + '.xlsx'
+        file_stream = '待定'
+        return send_file(file_stream, as_attachment=True, attachment_filename=filename)
+
+
 api.add_resource(optionTask, '/task')
 api.add_resource(optionOneTask, '/task/<int:taskid>')
 api.add_resource(mailConfig, '/mailconfig')
+api.add_resource(Upload, '/uploads')
