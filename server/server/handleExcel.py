@@ -4,7 +4,7 @@ import xlwt
 from datetime import datetime
 
 
-def handleExec(username, todayTaskList, tomorrowTaskList):
+def handleExcel(username, todayTaskList, tomorrowTaskList):
     # 居中
     alignment = xlwt.Alignment()
     alignment.horz = xlwt.Alignment.HORZ_CENTER
@@ -36,12 +36,12 @@ def handleExec(username, todayTaskList, tomorrowTaskList):
     # 添加背景颜色且居中
     pattern = xlwt.Pattern()
     pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-    pattern.pattern_fore_colour = 28
+    pattern.pattern_fore_colour = 30
 
     # 字体
     font2 = xlwt.Font()
     font2.name = '宋体'
-    font2.height = 300
+    font2.height = 350
 
     ColorStyle = xlwt.XFStyle()
     ColorStyle.pattern = pattern
@@ -53,7 +53,7 @@ def handleExec(username, todayTaskList, tomorrowTaskList):
     # 今日工作总结标题 结束
 
     # 从第4行开始
-    lineNumber = 4
+    lineNumber = 3
 
     # 写入今日计划
     font3 = xlwt.Font()
@@ -61,7 +61,6 @@ def handleExec(username, todayTaskList, tomorrowTaskList):
     font3.height = 200
 
     ContentStyle = xlwt.XFStyle()
-    ContentStyle.pattern = pattern
     ContentStyle.alignment = alignment
     ContentStyle.font = font2
 
@@ -78,18 +77,18 @@ def handleExec(username, todayTaskList, tomorrowTaskList):
     # 明日工作计划标题 结束
 
     # 写入明日工作计划
-    # for item in tomorrowTaskList:
-        # worksheet.write(lineNumber, 0, '{}'.format(item.get('task')),
-                # ContentStyle)
-        # worksheet.write(lineNumber, 1, '{}'.format(item.get('status')),
-                # ContentStyle)
-        # lineNumber += 1
+    for item in tomorrowTaskList:
+        lineNumber += 1
+        worksheet.write(lineNumber, 0, '{}'.format(item.get('task')),
+                ContentStyle)
+        worksheet.write(lineNumber, 1, '{}'.format(item.get('status')),
+                ContentStyle)
     # 写入明日工作计划 结束
 
 
     # 遇到什么问题/您有什么建议/需要什么帮助
-    # worksheet.write_merge(2, 1, 0, 1, '遇到什么问题/您有什么建议/需要什么帮助',
-            # ColorStyle)
+    worksheet.write_merge(lineNumber+1, lineNumber+1, 0, 1, '遇到什么问题/您有什么建议/需要什么帮助', ColorStyle)
+    worksheet.write_merge(lineNumber+2, lineNumber+4, 0, 1, '', ContentStyle)
     # 遇到什么问题/您有什么建议/需要什么帮助 结束
 
 
@@ -106,15 +105,15 @@ if __name__ == '__main__':
     todayTaskList = [
             {
                 'task': 'task1',
-                'status': 'ok'
+                'status': '完成'
                 },
             {
                 'task': 'task2',
-                'status': 'ok'
+                'status': '完成'
                 },
             {
                 'task': 'task3',
-                'status': 'ok'
+                'status': '完成'
                 }
             ]
     tomorrowTaskList = [
@@ -127,4 +126,4 @@ if __name__ == '__main__':
                 'status': ''
                 }
             ]
-    handleExec(username, todayTaskList, tomorrowTaskList)
+    handleExcel(username, todayTaskList, tomorrowTaskList)

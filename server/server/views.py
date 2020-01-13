@@ -12,12 +12,57 @@ from werkzeug.utils import secure_filename
 import os
 
 from server.encryption import outputMD5
+from server.handleExcel import handleExcel
 
 api = Api(app)
 
 
 username = 'tom'
 userId = 1
+
+
+class outputExcel(Resource):
+    """接收前端数据，生成excel表格
+    """
+
+    def option(self):
+        return {
+                'code': 20000
+                }
+
+    def get(self):
+        currentTime = datetime.now().strftime('%Y-%m-%d')
+        # 今日任务
+        todayTasks = TASK.query.filter_by(time=str(currentTime),
+                ownerId=userId).all()
+        todayTaskList = [
+                dict(
+                    id=item.id,
+                    title=item.title,
+                    status=item.status,
+                    time=item.time,
+                    edit=False
+                    )
+                for item in todayTasks
+                ]
+        # 明日任务
+        tomorrowTime = (datetime.datetime.now()+datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        tomorrowTasks = TASK.query.filter_by(time=str(tomorrowTime),
+                ownerId=useuserId).all()
+        tomorrowTaskList = [
+                dict(
+                    id=item.id,
+                    title=item.title,
+                    status=item.status,
+                    time=item.time,
+                    edit=False
+                    )
+                for item in tomorrowTasks
+                ]
+        handleExcel(username, todayTaskList, tomorrowTaskList)
+        return {
+                'code': 20000
+                }
 
 class optionTask(Resource):
     """获取任务列表和新增
