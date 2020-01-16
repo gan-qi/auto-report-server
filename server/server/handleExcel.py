@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import xlwt
+from io import BytesIO
 from datetime import datetime
 
 
@@ -65,7 +66,7 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
     ContentStyle.font = font2
 
     for item in todayTaskList:
-        worksheet.write(lineNumber, 0, '{}'.format(item.get('task')), ContentStyle)
+        worksheet.write(lineNumber, 0, '{}'.format(item.get('title')), ContentStyle)
         worksheet.write(lineNumber, 1, '{}'.format(item.get('status')), ContentStyle)
         lineNumber += 1
     # 写入今日计划 结束
@@ -77,12 +78,17 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
     # 明日工作计划标题 结束
 
     # 写入明日工作计划
-    for item in tomorrowTaskList:
+    if len(tomorrowTaskList) == 0:
         lineNumber += 1
-        worksheet.write(lineNumber, 0, '{}'.format(item.get('task')),
-                ContentStyle)
-        worksheet.write(lineNumber, 1, '{}'.format(item.get('status')),
-                ContentStyle)
+        worksheet.write(lineNumber, 0, '无', ContentStyle)
+        worksheet.write(lineNumber, 1, '无', ContentStyle)
+    else:
+        for item in tomorrowTaskList:
+            lineNumber += 1
+            worksheet.write(lineNumber, 0, '{}'.format(item.get('title')),
+                    ContentStyle)
+            worksheet.write(lineNumber, 1, '{}'.format(item.get('status')),
+                    ContentStyle)
     # 写入明日工作计划 结束
 
 
@@ -92,37 +98,39 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
     # 遇到什么问题/您有什么建议/需要什么帮助 结束
 
 
-
     # 设置单元格宽度
     worksheet.col(0).width = 25000
     worksheet.col(1).width = 10000
 
-    workbook.save('test.xls')
+    fileStream = BytesIO()
+    workbook.save(fileStream)
+    fileStream.seek(0)
+    return fileStream
 
 
 if __name__ == '__main__':
     username = 'tom'
     todayTaskList = [
             {
-                'task': 'task1',
+                'title': 'task1',
                 'status': '完成'
                 },
             {
-                'task': 'task2',
+                'title': 'task2',
                 'status': '完成'
                 },
             {
-                'task': 'task3',
+                'title': 'task3',
                 'status': '完成'
                 }
             ]
     tomorrowTaskList = [
             {
-                'task': 'task4',
+                'title': 'task4',
                 'status': ''
                 },
             {
-                'task': 'task5',
+                'title': 'task5',
                 'status': ''
                 }
             ]

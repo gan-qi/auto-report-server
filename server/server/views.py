@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-from flask import request, send_file, session
+from flask import request, send_file, session, Response, make_response
 
 from server import app, db
 from server.models import USER, TASK, LOG, MAILCONFIG
 
 from flask_restful import Resource, Api, reqparse
-from datetime import datetime
 from pprint import pprint
 from werkzeug.utils import secure_filename
 
 import os
+import datetime
 
 from server.encryption import outputMD5
 from server.handleExcel import handleExcel
@@ -19,6 +19,53 @@ api = Api(app)
 
 username = 'tom'
 userId = 1
+
+def handleFileStream():
+    currentTime = datetime.datetime.now().strftime('%Y-%m-%d')
+    # 完成状态转换
+    statusTrans = lambda status: '完成' if status else '未完成'
+    # 今日任务
+    todayTasks = TASK.query.filter_by(time=str(currentTime),
+            ownerId=userId).all()
+    todayTaskList = [
+            dict(
+                id=item.id,
+                title=item.title,
+                status=statusTrans(item.status),
+                time=item.time,
+                edit=False
+                )
+            for item in todayTasks
+            ]
+    # 明日任务
+    tomorrowTime = (datetime.datetime.now()+datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    tomorrowTasks = TASK.query.filter_by(time=str(tomorrowTime),
+            ownerId=userId).all()
+    tomorrowTaskList = [
+            dict(
+                id=item.id,
+                title=item.title,
+                status=statusTrans(item.status),
+                time=item.time,
+                edit=False
+                )
+            for item in tomorrowTasks
+            ]
+    filename = '{0}-{1}.xlsx'.format(username, datetime.datetime.now().strftime('%Y%m%d'))
+    fileStream = handleExcel(username, todayTaskList, tomorrowTaskList)
+    return fileStream, filename
+
+class sendMail(Response):
+    """将日报发送给指定邮箱
+    """
+
+    def option(self):
+        return {
+            'code': 20000
+        }
+    
+    def get(self):
+        return {}
 
 
 class outputExcel(Resource):
@@ -31,38 +78,10 @@ class outputExcel(Resource):
                 }
 
     def get(self):
-        currentTime = datetime.now().strftime('%Y-%m-%d')
-        # 今日任务
-        todayTasks = TASK.query.filter_by(time=str(currentTime),
-                ownerId=userId).all()
-        todayTaskList = [
-                dict(
-                    id=item.id,
-                    title=item.title,
-                    status=item.status,
-                    time=item.time,
-                    edit=False
-                    )
-                for item in todayTasks
-                ]
-        # 明日任务
-        tomorrowTime = (datetime.datetime.now()+datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        tomorrowTasks = TASK.query.filter_by(time=str(tomorrowTime),
-                ownerId=useuserId).all()
-        tomorrowTaskList = [
-                dict(
-                    id=item.id,
-                    title=item.title,
-                    status=item.status,
-                    time=item.time,
-                    edit=False
-                    )
-                for item in tomorrowTasks
-                ]
-        handleExcel(username, todayTaskList, tomorrowTaskList)
-        return {
-                'code': 20000
-                }
+        fileStream, filename = handleFileStream()
+
+        return send_file(fileStream, attachment_filename=filename, as_attachment=True)
+
 
 class optionTask(Resource):
     """获取任务列表和新增
@@ -74,7 +93,7 @@ class optionTask(Resource):
                 }
 
     def get(self):
-        currentTime = datetime.now().strftime('%Y-%m-%d')
+        currentTime = datetime.datetime.now().strftime('%Y-%m-%d')
         tasks = TASK.query.filter_by(ownerId=userId, time=str(currentTime)).all()
         taskList = [
                 dict(
@@ -108,6 +127,7 @@ class optionTask(Resource):
                     # 返回新增任务的id
                     'data': targetTask.id
                 }
+
 
 class optionOneTask(Resource):
     """对单个任务进行删除和修改
@@ -143,6 +163,7 @@ class optionOneTask(Resource):
         return {
                     'code': 20000
                 }
+
 
 class mailConfig(Resource):
     """邮箱设置，接受前端发来的邮箱信息放到数据库
@@ -213,6 +234,7 @@ class mailConfig(Resource):
                 'code': 20000
                 }
 
+
 class Upload(Resource):
     """处理上传文件
     """
@@ -230,6 +252,7 @@ class Upload(Resource):
                 'code': 20000
                 }
 
+
 class Downloads(Resource):
     """提供文件下载
     """
@@ -242,10 +265,11 @@ class Downloads(Resource):
     def post(self):
         data = request.get_json(force=True)
         # 生成文件...
-        filename = str(datetime.now().strftime('%Y-%m-%d')) \
+        filename = str(datetime.datetime.now().strftime('%Y-%m-%d')) \
                 + str(userId) + '.xlsx'
         file_stream = '待定'
         return send_file(file_stream, as_attachment=True, attachment_filename=filename)
+
 
 class Auth(Resource):
     """用户认证
@@ -363,7 +387,7 @@ class Logout(Resource):
                 }
 
 
-
+api.add_resource(outputExcel, '/outputfile')
 api.add_resource(optionTask, '/task')
 api.add_resource(optionOneTask, '/task/<int:taskid>')
 api.add_resource(mailConfig, '/mailconfig')
