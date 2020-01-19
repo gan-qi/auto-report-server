@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import request, send_file, session, Response, make_response
+from flask import request, send_file, session
 
 from server import app, db
 from server.models import USER, TASK, LOG, MAILCONFIG
@@ -10,9 +10,11 @@ from werkzeug.utils import secure_filename
 
 import os
 import datetime
+import json
 
 from server.encryption import outputMD5
 from server.handleExcel import handleExcel
+from server.sendMail import sendMail
 
 api = Api(app)
 
@@ -55,7 +57,12 @@ def handleFileStream():
     fileStream = handleExcel(username, todayTaskList, tomorrowTaskList)
     return fileStream, filename
 
-class sendMail(Response):
+
+@app.before_request
+def before_request():
+    print('before_request: ', session)
+
+class submitReport(Resource):
     """将日报发送给指定邮箱
     """
 
@@ -65,7 +72,19 @@ class sendMail(Response):
         }
     
     def get(self):
-        return {}
+        fileStream, _ = handleFileStream()
+        userSettings = MAILCONFIG.query.filter_by(ownerId=userId).first()
+        settings = {
+            'username': username,
+            'targetUsername': userSettings.toName,
+            'from_addr': userSettings.fromEmail,
+            'password': userSettings.fromEmailKey,
+            'to_addr': userSettings.toEmail
+        }
+        sendMail(fileStream, settings)
+        return {
+            'code': 20000
+        }
 
 
 class outputExcel(Resource):
@@ -105,6 +124,8 @@ class optionTask(Resource):
                     )
                 for item in tasks
                 ]
+
+        print('test:  ', session.get('f5c11655e04eff9f837a2833fa150d6e', 'no set'))
         return {
                     'code': 20000,
                     'data': taskList
@@ -246,8 +267,15 @@ class Upload(Resource):
 
     def post(self):
         targetFile = request.files['file']
-        targetFile.save(os.path.join(app.root_path + '/uploads',
-            targetFile.filename))
+        userSettings = MAILCONFIG.query.filter_by(ownerId=userId).first()
+        settings = {
+            'username': username,
+            'targetUsername': userSettings.toName,
+            'from_addr': userSettings.fromEmail,
+            'password': userSettings.fromEmailKey,
+            'to_addr': userSettings.toEmail
+        }
+        sendMail(targetFile, settings)
         return {
                 'code': 20000
                 }
@@ -317,25 +345,27 @@ class Login(Resource):
 
     def post(self):
         data = request.get_json(force=True)
-        # 检查用户名密码是否正确
         if not data.get('username'):
             return {
                     'code': 40001,
                     'message': '登陆失败'
                     }
-        tokens = {
-                'admin': {
-                    'token': 'admin-token'
-                    },
-                'user': {
-                    'token': 'editor-token'
-                    }
-                }
-        print(tokens.get(data.get('username')))
+        print(data.get('username'), data.get('password'))
+        # 加密信息获取token
+        token = outputMD5('{0}auto{1}'.format(
+            data.get('username'),
+            data.get('password'))
+        )
+        # 将信息写入session
+        session[token] = {
+            'username': data.get('username'),
+            'password': data.get('password')
+        }
+        session['key'] = 'value'
         return {
                 'code': 20000,
                 'data': {
-                    'token': tokens.get(data.get('username'))
+                    'token': token
                     }
                 }
 
@@ -350,25 +380,15 @@ class userInfo(Resource):
 
     def get(self):
         data = self.parser.parse_args()
-        print(data)
-        token = json.loads(data.get('token')).get('token')
-        users = {
-                'editor-token': {
-                    'roles': ['editor'],
-                    'introduction': '用户甲',
-                    'avatar': 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-                    'name': '普通用户'
-                    },
-                'admin-token': {
-                    'roles': ['admin'],
-                    'introduction': '超级管理员',
-                    'avatar': 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-                    'name': '超级管理员'
-                    }
-                }
+        token = data.get('token')
+        # userInfo = session.get(token, 'not set')
+        print('session key:', session.get('key', 'not set'))
         return {
                 'code': 20000,
-                'data': users.get(token)
+                'data': {
+                    'avatar': '...',
+                    'username': 'tom'
+                    }
                 }
 
 
@@ -387,6 +407,7 @@ class Logout(Resource):
                 }
 
 
+api.add_resource(submitReport, '/submitreport')
 api.add_resource(outputExcel, '/outputfile')
 api.add_resource(optionTask, '/task')
 api.add_resource(optionOneTask, '/task/<int:taskid>')

@@ -15,11 +15,11 @@ def _format_addr(s):
     name, addr = parseaddr(s)
     return formataddr((Header(name, 'utf-8').encode(), addr))
 
-def sendMail(path, settings):
+def sendMail(fileStream, settings):
     """发送邮件
 
-    :path: 文件路径
-    :path type: str
+    :fileStream: xlsx文件流
+    :fileStream type: BytesIO
 
     :settings: 邮箱设置对象
                 {
@@ -55,16 +55,15 @@ def sendMail(path, settings):
     msg.attach(MIMEText(title, 'plain', 'utf-8'))
 
     # 添加附件
-    with open(path, 'rb') as f:
-        # 设置附件的MIME和文件名
-        mime = MIMEBase('xlsx', 'xlsx', filename=title + '.xlsx')
-        mime.add_header('Content-Disposition', 'attachment',
-                filename=title +'.xlsx')
-        mime.add_header('Content-ID', '<0>')
-        mime.add_header('X-Attachment-Id', '0')
-        mime.set_payload(f.read())
-        encoders.encode_base64(mime)
-        msg.attach(mime)
+    # 设置附件的MIME和文件名
+    mime = MIMEBase('xlsx', 'xlsx', filename=title + '.xlsx')
+    mime.add_header('Content-Disposition', 'attachment',
+            filename=title +'.xlsx')
+    mime.add_header('Content-ID', '<0>')
+    mime.add_header('X-Attachment-Id', '0')
+    mime.set_payload(fileStream.read())
+    encoders.encode_base64(mime)
+    msg.attach(mime)
 
     # 发送邮件，启用ssl加密
     server = smtplib.SMTP(smtp_server, 587)
