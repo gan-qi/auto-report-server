@@ -17,25 +17,46 @@ from server.sendMail import sendMail
 
 api = Api(app)
 
+
+def statusTrans(status):
+    """转化任务状态"""
+    if status == 0:
+        return '未完成'
+    elif status == 1:
+        return '已完成'
+    elif status == 2:
+        return '进行中'
+
+
 def handleFileStream():
+    """处理文件流，整合今日和明日的任务
+    """
+    # 当天日期
     currentTime = datetime.datetime.now().strftime('%Y-%m-%d')
-    # 完成状态转换
-    statusTrans = lambda status: '完成' if status else '未完成'
+    # 第二天日期
+    tomorrowTime = (
+        datetime.datetime.now() + datetime.timedelta(days=1)
+    ).strftime("%Y-%m-%d")
     # 今日任务
     todayTasks = TASK.query.filter_by(time=str(currentTime),
             ownerId=g.userId).all()
-    todayTaskList = [
-            dict(
+    todayTaskList = []
+    for item in todayTasks:
+        node = dict(
                 id=item.id,
                 title=item.title,
                 status=statusTrans(item.status),
                 time=item.time,
                 edit=False
-                )
-            for item in todayTasks
-            ]
+        )
+        todayTaskList.append(node)
+        # 未完成任务转到明天
+        if item.status != 1:
+            target = TASK.query.filter_by(id=item.id).first()
+            target.time = datetime.datetime.now() + datetime.timedelta(days=1)
+            db.session.commit()
+
     # 明日任务
-    tomorrowTime = (datetime.datetime.now()+datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     tomorrowTasks = TASK.query.filter_by(time=str(tomorrowTime),
             ownerId=g.userId).all()
     tomorrowTaskList = [
@@ -48,7 +69,10 @@ def handleFileStream():
                 )
             for item in tomorrowTasks
             ]
-    filename = '{0}-{1}.xlsx'.format(g.username, datetime.datetime.now().strftime('%Y%m%d'))
+    filename = '{0}-{1}.xlsx'.format(
+        g.username,
+        datetime.datetime.now().strftime('%Y%m%d')
+    )
     fileStream = handleExcel(g.username, todayTaskList, tomorrowTaskList)
     return fileStream, filename
 
@@ -67,7 +91,7 @@ def before_request():
             userInfo = redis.get(token)
             g.username = userInfo.get('username')
             g.userId = userInfo.get('id')
-            
+
 
 class submitReport(Resource):
     """将日报发送给指定邮箱
@@ -111,7 +135,11 @@ class outputExcel(Resource):
     def get(self):
         fileStream, filename = handleFileStream()
 
-        return send_file(fileStream, attachment_filename=filename, as_attachment=True)
+        return send_file(
+            fileStream,
+            attachment_filename=filename,
+            as_attachment=True
+        )
 
 
 class optionTask(Resource):
@@ -125,7 +153,10 @@ class optionTask(Resource):
 
     def get(self):
         currentTime = datetime.datetime.now().strftime('%Y-%m-%d')
-        tasks = TASK.query.filter_by(ownerId=g.userId, time=str(currentTime)).all()
+        tasks = TASK.query.filter_by(
+            ownerId=g.userId,
+            time=str(currentTime)
+        ).all()
         taskList = [
                 dict(
                     id=item.id,
@@ -152,7 +183,10 @@ class optionTask(Resource):
         newTask = TASK(title=data.get('title'), ownerId=g.userId)
         db.session.add(newTask)
         db.session.commit()
-        targetTask = TASK.query.filter_by(title=data.get('title'), ownerId=g.userId).first()
+        targetTask = TASK.query.filter_by(
+            title=data.get('title'),
+            ownerId=g.userId
+        ).first()
         return {
                     'code': 20000,
                     # 返回新增任务的id
@@ -306,8 +340,12 @@ class Downloads(Resource):
         filename = str(datetime.datetime.now().strftime('%Y-%m-%d')) \
                 + str(g.userId) + '.xlsx'
         file_stream = '待定'
-        return send_file(file_stream, as_attachment=True, attachment_filename=filename)
-        
+        return send_file(
+            file_stream,
+            as_attachment=True,
+            attachment_filename=filename
+        )
+
 
 class Login(Resource):
     """用户登陆
