@@ -1,26 +1,21 @@
 # -*- coding: utf-8 -*-
-from flask import request, send_file, session
-
-from server import app, db
-from server.models import USER, TASK, LOG, MAILCONFIG
-
-from flask_restful import Resource, Api, reqparse
-from pprint import pprint
-from werkzeug.utils import secure_filename
-
-import os
 import datetime
 import json
+import os
+import time
+from pprint import pprint
 
+from flask import g, request, send_file
+from flask_restful import Api, Resource, reqparse
+from werkzeug.utils import secure_filename
+
+from server import app, db, redis
 from server.encryption import outputMD5
 from server.handleExcel import handleExcel
+from server.models import LOG, MAILCONFIG, TASK, USER
 from server.sendMail import sendMail
 
 api = Api(app)
-
-
-username = 'tom'
-userId = 1
 
 def handleFileStream():
     currentTime = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -28,7 +23,7 @@ def handleFileStream():
     statusTrans = lambda status: '完成' if status else '未完成'
     # 今日任务
     todayTasks = TASK.query.filter_by(time=str(currentTime),
-            ownerId=userId).all()
+            ownerId=g.userId).all()
     todayTaskList = [
             dict(
                 id=item.id,
@@ -42,7 +37,7 @@ def handleFileStream():
     # 明日任务
     tomorrowTime = (datetime.datetime.now()+datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     tomorrowTasks = TASK.query.filter_by(time=str(tomorrowTime),
-            ownerId=userId).all()
+            ownerId=g.userId).all()
     tomorrowTaskList = [
             dict(
                 id=item.id,
@@ -53,14 +48,26 @@ def handleFileStream():
                 )
             for item in tomorrowTasks
             ]
-    filename = '{0}-{1}.xlsx'.format(username, datetime.datetime.now().strftime('%Y%m%d'))
-    fileStream = handleExcel(username, todayTaskList, tomorrowTaskList)
+    filename = '{0}-{1}.xlsx'.format(g.username, datetime.datetime.now().strftime('%Y%m%d'))
+    fileStream = handleExcel(g.username, todayTaskList, tomorrowTaskList)
     return fileStream, filename
 
 
 @app.before_request
 def before_request():
-    print('before_request: ', session)
+    # 此处拦截请求，验证其token
+    if request.path != '/user/login':
+        token = request.args.get('token')
+        # 获取token来获取存储的详细用户信息
+        if not token:
+            return {
+                'code': 50008
+            }
+        else:
+            userInfo = redis.get(token)
+            g.username = userInfo.get('username')
+            g.userId = userInfo.get('id')
+            
 
 class submitReport(Resource):
     """将日报发送给指定邮箱
@@ -73,9 +80,14 @@ class submitReport(Resource):
     
     def get(self):
         fileStream, _ = handleFileStream()
-        userSettings = MAILCONFIG.query.filter_by(ownerId=userId).first()
+        userSettings = MAILCONFIG.query.filter_by(ownerId=g.userId).first()
+        if not userSettings:
+            return {
+                'code': 50000,
+                'message': '哦豁？先去设置一下吧...'
+            }
         settings = {
-            'username': username,
+            'username': g.username,
             'targetUsername': userSettings.toName,
             'from_addr': userSettings.fromEmail,
             'password': userSettings.fromEmailKey,
@@ -113,7 +125,7 @@ class optionTask(Resource):
 
     def get(self):
         currentTime = datetime.datetime.now().strftime('%Y-%m-%d')
-        tasks = TASK.query.filter_by(ownerId=userId, time=str(currentTime)).all()
+        tasks = TASK.query.filter_by(ownerId=g.userId, time=str(currentTime)).all()
         taskList = [
                 dict(
                     id=item.id,
@@ -124,8 +136,6 @@ class optionTask(Resource):
                     )
                 for item in tasks
                 ]
-
-        print('test:  ', session.get('f5c11655e04eff9f837a2833fa150d6e', 'no set'))
         return {
                     'code': 20000,
                     'data': taskList
@@ -139,10 +149,10 @@ class optionTask(Resource):
         }
         """
         data = request.get_json(force=True)
-        newTask = TASK(title=data.get('title'), ownerId=1)
+        newTask = TASK(title=data.get('title'), ownerId=g.userId)
         db.session.add(newTask)
         db.session.commit()
-        targetTask = TASK.query.filter_by(title=data.get('title'), ownerId=1).first()
+        targetTask = TASK.query.filter_by(title=data.get('title'), ownerId=g.userId).first()
         return {
                     'code': 20000,
                     # 返回新增任务的id
@@ -198,7 +208,7 @@ class mailConfig(Resource):
     def get(self):
         """获取邮箱设置
         """
-        mailconfig = MAILCONFIG.query.filter_by(ownerId=userId).first()
+        mailconfig = MAILCONFIG.query.filter_by(ownerId=g.userId).first()
         if mailconfig:
             data = {
                     'fromName': mailconfig.fromName,
@@ -233,7 +243,7 @@ class mailConfig(Resource):
         """
         data = request.get_json(force=True)
         # 先判断该用户设置是否存在
-        check = MAILCONFIG.query.filter_by(ownerId=userId).first()
+        check = MAILCONFIG.query.filter_by(ownerId=g.userId).first()
         if check:
             check.fromName = data.get('fromName')
             check.toName = data.get('toName')
@@ -247,7 +257,7 @@ class mailConfig(Resource):
                         fromEmail = data.get('fromEmail'),
                         fromEmailKey = data.get('fromEmailKey'),
                         toEmail = data.get('toEmail'),
-                        ownerId = userId
+                        ownerId = g.userId
                     )
             db.session.add(config)
         db.session.commit()
@@ -267,9 +277,9 @@ class Upload(Resource):
 
     def post(self):
         targetFile = request.files['file']
-        userSettings = MAILCONFIG.query.filter_by(ownerId=userId).first()
+        userSettings = MAILCONFIG.query.filter_by(ownerId=g.userId).first()
         settings = {
-            'username': username,
+            'username': g.username,
             'targetUsername': userSettings.toName,
             'from_addr': userSettings.fromEmail,
             'password': userSettings.fromEmailKey,
@@ -294,50 +304,10 @@ class Downloads(Resource):
         data = request.get_json(force=True)
         # 生成文件...
         filename = str(datetime.datetime.now().strftime('%Y-%m-%d')) \
-                + str(userId) + '.xlsx'
+                + str(g.userId) + '.xlsx'
         file_stream = '待定'
         return send_file(file_stream, as_attachment=True, attachment_filename=filename)
-
-
-class Auth(Resource):
-    """用户认证
-    """
-
-    def option(self):
-        return {
-                'code': 20000
-                }
-
-    def post(self):
-        data = request.get_json(force=True)
-        username = data.get('username')
-        password = data.get('password')
-        userInfo = USER.query.filter_by(username=username).first()
-        # 先判断用户名
-        if userInfo:
-            # 再判断用户的密码
-            if userInfo.password != password:
-                return {
-                        'code': 20001,
-                        'message': '密码错误'
-                        }
-            else:
-                # 生成token放到session
-                token = outputMD5(username[1:] + password)
-                session['username'] = username
-                session['token'] = token
-                # 设置有效期为一个月
-                session.permanent = True
-                return {
-                        'code': 20000,
-                        'token': token
-                        }
-        else:
-            return {
-                    'code': 20001,
-                    'message': '用户名不存在'
-                    }
-
+        
 
 class Login(Resource):
     """用户登陆
@@ -345,23 +315,29 @@ class Login(Resource):
 
     def post(self):
         data = request.get_json(force=True)
-        if not data.get('username'):
+        username = data.get('username')
+        password = data.get('password')
+        userInfoCheck = USER.query.filter_by(
+            username=username,
+            password=password
+        ).first()
+        if not userInfoCheck:
             return {
                     'code': 40001,
                     'message': '登陆失败'
                     }
-        print(data.get('username'), data.get('password'))
         # 加密信息获取token
-        token = outputMD5('{0}auto{1}'.format(
-            data.get('username'),
-            data.get('password'))
-        )
+        token = outputMD5('{0}{1}auto{2}'.format(
+            username,
+            password,
+            str(time.time())
+        ))
         # 将信息写入session
-        session[token] = {
-            'username': data.get('username'),
-            'password': data.get('password')
-        }
-        session['key'] = 'value'
+        redis.set(token, 
+        {
+            'id': userInfoCheck.id,
+            'username': username
+        })
         return {
                 'code': 20000,
                 'data': {
@@ -380,14 +356,12 @@ class userInfo(Resource):
 
     def get(self):
         data = self.parser.parse_args()
-        token = data.get('token')
-        # userInfo = session.get(token, 'not set')
-        print('session key:', session.get('key', 'not set'))
+        userInfo = redis.get(data.get('token'))
         return {
                 'code': 20000,
                 'data': {
                     'avatar': '...',
-                    'username': 'tom'
+                    'username': userInfo.get('username')
                     }
                 }
 

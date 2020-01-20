@@ -21,10 +21,11 @@ def initdb(drop):
 @app.cli.command()
 def insert():
     """灌数据"""
-    newUser = USER(username="tom", password="admin")
-    db.session.add(newUser)
+    for user in ['jack', 'jerry', 'mark']:
+        newUser = USER(username=user, password="admin")
+        db.session.add(newUser)
+        click.echo('insert User: %s'%user)
     db.session.commit()
-    click.echo('insert User: Tom')
     for item in range(1, 11):
         newTask=TASK(title="task%s"%(item), ownerId=1)
         db.session.add(newTask)
