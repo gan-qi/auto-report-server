@@ -15,6 +15,7 @@ from server.handleExcel import handleExcel
 from server.models import LOG, MAILCONFIG, TASK, USER
 from server.sendMail import sendMail
 
+
 api = Api(app)
 
 
@@ -108,7 +109,7 @@ class submitReport(Resource):
         if not userSettings:
             return {
                 'code': 50000,
-                'message': '哦豁？先去设置一下吧...'
+                'message': '哦豁？先去设置一下邮箱吧...'
             }
         settings = {
             'username': g.username,
