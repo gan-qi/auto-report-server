@@ -11,7 +11,6 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
     alignment.horz = xlwt.Alignment.HORZ_CENTER
     alignment.vert = xlwt.Alignment.VERT_CENTER
 
-
     # 前两行标题
     # 标题字体
     font = xlwt.Font()
@@ -28,10 +27,9 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
     worksheet = workbook.add_sheet('Sheet1')
     # 头部信息
     worksheet.write_merge(0, 0, 0, 1,
-            '{}日报表'.format(datetime.now().strftime('%Y年%m月%d日')), CenterStyle)
+                          '{}日报表'.format(datetime.now().strftime('%Y年%m月%d日')), CenterStyle)
     worksheet.write_merge(1, 1, 0, 1, '提交人：{}'.format(username), CenterStyle)
     # 前两行标题 结束
-
 
     # 今日工作总结标题
     # 添加背景颜色且居中
@@ -71,7 +69,6 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
         lineNumber += 1
     # 写入今日计划 结束
 
-
     # 明日工作计划标题
     worksheet.write(lineNumber, 0, '明日工作计划', ColorStyle)
     worksheet.write(lineNumber, 1, '预计完成情况', ColorStyle)
@@ -86,17 +83,15 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
         for item in tomorrowTaskList:
             lineNumber += 1
             worksheet.write(lineNumber, 0, '{}'.format(item.get('title')),
-                    ContentStyle)
+                            ContentStyle)
             worksheet.write(lineNumber, 1, '{}'.format(item.get('status')),
-                    ContentStyle)
+                            ContentStyle)
     # 写入明日工作计划 结束
 
-
     # 遇到什么问题/您有什么建议/需要什么帮助
-    worksheet.write_merge(lineNumber+1, lineNumber+1, 0, 1, '遇到什么问题/您有什么建议/需要什么帮助', ColorStyle)
-    worksheet.write_merge(lineNumber+2, lineNumber+4, 0, 1, '', ContentStyle)
+    worksheet.write_merge(lineNumber + 1, lineNumber + 1, 0, 1, '遇到什么问题/您有什么建议/需要什么帮助', ColorStyle)
+    worksheet.write_merge(lineNumber + 2, lineNumber + 4, 0, 1, '', ContentStyle)
     # 遇到什么问题/您有什么建议/需要什么帮助 结束
-
 
     # 设置单元格宽度
     worksheet.col(0).width = 25000
@@ -111,27 +106,27 @@ def handleExcel(username, todayTaskList, tomorrowTaskList):
 if __name__ == '__main__':
     username = 'tom'
     todayTaskList = [
-            {
-                'title': 'task1',
-                'status': '完成'
-                },
-            {
-                'title': 'task2',
-                'status': '完成'
-                },
-            {
-                'title': 'task3',
-                'status': '完成'
-                }
-            ]
+        {
+            'title':  'task1',
+            'status': '完成'
+        },
+        {
+            'title':  'task2',
+            'status': '完成'
+        },
+        {
+            'title':  'task3',
+            'status': '完成'
+        }
+    ]
     tomorrowTaskList = [
-            {
-                'title': 'task4',
-                'status': ''
-                },
-            {
-                'title': 'task5',
-                'status': ''
-                }
-            ]
+        {
+            'title':  'task4',
+            'status': ''
+        },
+        {
+            'title':  'task5',
+            'status': ''
+        }
+    ]
     handleExcel(username, todayTaskList, tomorrowTaskList)

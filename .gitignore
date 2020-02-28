@@ -1,4 +1,11 @@
 # Byte-compiled / optimized / DLL files
-/server/server/__pycache__/
-/server/server/*.py[cod]
-/server/server/uploads/*
+/server/__pycache__/
+/server/*.py[cod]
+/server/uploads/*
+/.idea
+/server/utils/__pycache__
+/server/views/User/__pycache__
+/server/views/Task/__pycache__
+/server/views/Report/__pycache__
+/server/views/Mail/__pycache__
+/server/views/File/__pycache__

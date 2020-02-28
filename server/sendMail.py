@@ -11,11 +11,13 @@ from datetime import datetime
 
 import smtplib
 
+
 def _format_addr(s):
     name, addr = parseaddr(s)
     return formataddr((Header(name, 'utf-8').encode(), addr))
 
-def sendMail(fileStream, settings):
+
+def send_mail(file_stream, settings):
     """发送邮件
 
     :fileStream: xlsx文件流
@@ -33,22 +35,21 @@ def sendMail(fileStream, settings):
     # 邮件发送基本信息
     [
         username,
-        targetUsername,
+        target_username,
         from_addr,
         password,
         to_addr
-            ] = settings.values()
+    ] = settings.values()
     # 获取当前时间
     current = datetime.now().strftime('%Y年%m月%d日')
     # 标题
-    title='{0}{1}日报表'.format(username, str(current))
+    title = '{0}{1}日报表'.format(username, str(current))
     # 输入SMTP服务器地址:
     smtp_server = 'smtp.qiye.163.com'
 
-
     msg = MIMEMultipart()
     msg['From'] = _format_addr('{0} <{1}>'.format(username, from_addr))
-    msg['To'] = _format_addr('{0} <{1}>'.format(targetUsername, to_addr))
+    msg['To'] = _format_addr('{0} <{1}>'.format(target_username, to_addr))
     msg['Subject'] = Header(title, 'utf-8').encode()
 
     # 邮件正文
@@ -56,12 +57,12 @@ def sendMail(fileStream, settings):
 
     # 添加附件
     # 设置附件的MIME和文件名
-    mime = MIMEBase('xlsx', 'xlsx', filename=title + '.xlsx')
+    mime = MIMEBase('xlsx', 'xlsx', filename = title + '.xlsx')
     mime.add_header('Content-Disposition', 'attachment',
-            filename=title +'.xlsx')
+                    filename = title + '.xlsx')
     mime.add_header('Content-ID', '<0>')
     mime.add_header('X-Attachment-Id', '0')
-    mime.set_payload(fileStream.read())
+    mime.set_payload(file_stream.read())
     encoders.encode_base64(mime)
     msg.attach(mime)
 

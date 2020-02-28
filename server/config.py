@@ -11,7 +11,7 @@ dev_db = 'sqlite:////' + os.path.join(os.path.dirname(app.root_path), 'data.db')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', dev_db)
 
-RESTFUL_JSON=dict(ensure_ascii=False)
+RESTFUL_JSON = dict(ensure_ascii = False)
 
 # mariadb
 # HOSTNAME = '127.0.0.1'
