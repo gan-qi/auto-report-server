@@ -2,7 +2,7 @@
 import click
 
 from server import app, db
-from server.models import USER, TASK, LOG, MAILCONFIG
+from server.models import User, Task, Log, MailConfig
 
 from datetime import datetime
 
@@ -23,12 +23,12 @@ def initdb(drop):
 def insert():
     """灌数据"""
     for user in ['jack', 'jerry', 'mark']:
-        newUser = USER(username = user, password = "admin")
+        newUser = User(username = user, password = "admin")
         db.session.add(newUser)
         click.echo('insert User: %s' % user)
     db.session.commit()
     for item in range(1, 11):
-        newTask = TASK(title = "task%s" % (item), ownerId = 1)
+        newTask = Task(title = "task%s" % (item), ownerId = 1)
         db.session.add(newTask)
     db.session.commit()
     click.echo('Done.')

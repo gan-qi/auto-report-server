@@ -6,9 +6,14 @@ from flask_restful import Resource
 import datetime
 
 
-class OptionTask(Resource):
+class OptionTomorrowTask(Resource):
     """获取任务列表和新增
     """
+
+    def __init__(self):
+        self.tomorrow_time = (
+                datetime.datetime.now() + datetime.timedelta(days = 1)
+        ).strftime("%Y-%m-%d")
 
     def option(self):
         return {
@@ -16,17 +21,16 @@ class OptionTask(Resource):
         }
 
     def get(self):
-        current_time = datetime.datetime.now().strftime('%Y-%m-%d')
         tasks = Task.query.filter_by(
             ownerId = g.userId,
-            time = str(current_time)
+            time = str(self.tomorrow_time)
         ).all()
         task_list = [
             dict(
                 id = item.id,
                 title = item.title,
                 status = item.status,
-                time = item.time,
+                time = self.tomorrow_time,
                 edit = False
             )
             for item in tasks
@@ -44,7 +48,11 @@ class OptionTask(Resource):
         }
         """
         data = request.get_json(force = True)
-        new_task = Task(title = data.get('title'), ownerId = g.userId)
+        new_task = Task(
+            title = data.get('title'),
+            time = self.tomorrow_time,
+            ownerId = g.userId
+        )
         db.session.add(new_task)
         db.session.commit()
         target_task = Task.query.filter_by(
@@ -58,4 +66,4 @@ class OptionTask(Resource):
         }
 
 
-api.add_resource(OptionTask, '/task')
+api.add_resource(OptionTomorrowTask, '/tomorrowtask')

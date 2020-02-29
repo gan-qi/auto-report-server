@@ -2,8 +2,10 @@
 /server/__pycache__/
 /server/*.py[cod]
 /server/uploads/*
+/data.db
 /.idea
 /server/utils/__pycache__
+/server/views/__pycache__
 /server/views/User/__pycache__
 /server/views/Task/__pycache__
 /server/views/Report/__pycache__

@@ -1,10 +1,10 @@
 from server import api, db
 from flask_restful import Resource
-from flask import request
-from server.models import MAILCONFIG
+from flask import request, g
+from server.models import MailConfig
 
 
-class mailConfig(Resource):
+class MailConfigClass(Resource):
     """邮箱设置，接受前端发来的邮箱信息放到数据库
     """
 
@@ -16,14 +16,14 @@ class mailConfig(Resource):
     def get(self):
         """获取邮箱设置
         """
-        mailconfig = MAILCONFIG.query.filter_by(ownerId = g.userId).first()
-        if mailconfig:
+        mail_config = MailConfig.query.filter_by(ownerId = g.userId).first()
+        if mail_config:
             data = {
-                'fromName':     mailconfig.fromName,
-                'toName':       mailconfig.toName,
-                'fromEmail':    mailconfig.fromEmail,
-                'fromEmailKey': mailconfig.fromEmailKey,
-                'toEmail':      mailconfig.toEmail
+                'fromName':     mail_config.fromName,
+                'toName':       mail_config.toName,
+                'fromEmail':    mail_config.fromEmail,
+                'fromEmailKey': mail_config.fromEmailKey,
+                'toEmail':      mail_config.toEmail
             }
         else:
             data = {
@@ -50,7 +50,7 @@ class mailConfig(Resource):
         """
         data = request.get_json(force = True)
         # 先判断该用户设置是否存在
-        check = MAILCONFIG.query.filter_by(ownerId = g.userId).first()
+        check = MailConfig.query.filter_by(ownerId = g.userId).first()
         if check:
             check.fromName = data.get('fromName')
             check.toName = data.get('toName')
@@ -58,7 +58,7 @@ class mailConfig(Resource):
             check.fromEmailKey = data.get('fromEmailKey')
             check.toEmail = data.get('toEmail')
         else:
-            config = MAILCONFIG(
+            config = MailConfig(
                 fromName = data.get('fromName'),
                 toName = data.get('toName'),
                 fromEmail = data.get('fromEmail'),
@@ -73,4 +73,4 @@ class mailConfig(Resource):
         }
 
 
-api.add_resource(mailConfig, '/mailconfig')
+api.add_resource(MailConfigClass, '/mailconfig')

@@ -1,11 +1,12 @@
 from server import api
-from server.models import MAILCONFIG
-from server.utils.handle_file_stream import handleFileStream
-from server.sendMail import send_mail
+from server.models import MailConfig
+from server.utils.handle_file_stream import handle_file_stream
+from server.utils.sendMail import send_mail
 from flask_restful import Resource
+from flask import g
 
 
-class submitReport(Resource):
+class SubmitReport(Resource):
     """将日报发送给指定邮箱
     """
 
@@ -14,9 +15,9 @@ class submitReport(Resource):
             'code': 20000
         }
 
-    def get(self):
-        file_stream, _ = handleFileStream()
-        user_settings = MAILCONFIG.query.filter_by(ownerId = g.userId).first()
+    def post(self):
+        file_stream, _ = handle_file_stream()
+        user_settings = MailConfig.query.filter_by(ownerId = g.userId).first()
         if not user_settings:
             return {
                 'code':    50000,
@@ -35,4 +36,4 @@ class submitReport(Resource):
         }
 
 
-api.add_resource(submitReport, '/submitreport')
+api.add_resource(SubmitReport, '/submitreport')

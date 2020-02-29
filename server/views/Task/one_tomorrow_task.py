@@ -4,7 +4,7 @@ from flask import request
 from server.models import Task
 
 
-class OptionOneTask(Resource):
+class OptionOneTomorrowTask(Resource):
     """对单个任务进行删除和修改
     """
 
@@ -40,4 +40,4 @@ class OptionOneTask(Resource):
         }
 
 
-api.add_resource(OptionOneTask, '/task/<int:taskid>')
+api.add_resource(OptionOneTomorrowTask, '/tomorrowtask/<int:taskid>')

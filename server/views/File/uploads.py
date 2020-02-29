@@ -1,10 +1,8 @@
 from server import api
 from flask_restful import Resource
-from flask import request
-from server.sendMail import send_mail
-from server.models import MAILCONFIG
-
-import datetime
+from flask import request, g
+from server.utils.sendMail import send_mail
+from server.models import MailConfig
 
 
 class Upload(Resource):
@@ -17,16 +15,16 @@ class Upload(Resource):
         }
 
     def post(self):
-        targetFile = request.files['file']
-        userSettings = MAILCONFIG.query.filter_by(ownerId = g.userId).first()
+        target_file = request.files['file']
+        user_settings = MailConfig.query.filter_by(ownerId = g.userId).first()
         settings = {
             'username':       g.username,
-            'targetUsername': userSettings.toName,
-            'from_addr':      userSettings.fromEmail,
-            'password':       userSettings.fromEmailKey,
-            'to_addr':        userSettings.toEmail
+            'targetUsername': user_settings.toName,
+            'from_addr':      user_settings.fromEmail,
+            'password':       user_settings.fromEmailKey,
+            'to_addr':        user_settings.toEmail
         }
-        send_mail(targetFile, settings)
+        send_mail(target_file, settings)
         return {
             'code': 20000
         }

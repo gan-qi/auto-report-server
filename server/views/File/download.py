@@ -1,6 +1,6 @@
 from server import api
 from flask_restful import Resource
-from flask import send_file, request
+from flask import send_file, request, g
 
 import datetime
 

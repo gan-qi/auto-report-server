@@ -3,14 +3,14 @@ from server import db
 from datetime import datetime
 
 
-class USER(db.Model):
+class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     username = db.Column(db.String(10), nullable = False)
     password = db.Column(db.String(30), nullable = False)
 
 
-class TASK(db.Model):
+class Task(db.Model):
     __tablename__ = 'task'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     title = db.Column(db.String(30), nullable = False)
@@ -19,19 +19,28 @@ class TASK(db.Model):
                      default = str(datetime.now().strftime('%Y-%m-%d')))
     ownerId = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    owner = db.relationship('USER', backref = db.backref('tasks'))
+    owner = db.relationship('User', backref = db.backref('tasks'))
 
 
-class LOG(db.Model):
+class Other(db.Model):
+    __tablename__ = 'other'
+    id = db.Column(db.Integer, primary_key = True, autoincrement = True)
+    advice = db.Column(db.String(200), nullable = True)
+    time = db.Column(db.String(10), nullable = False,
+                     default = str(datetime.now().strftime('%Y-%m-%d')))
+    ownerId = db.Column(db.Integer, nullable = False)
+
+
+class Log(db.Model):
     __tablename__ = 'log'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     content = db.Column(db.String(100), nullable = False)
     ownerId = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    owner = db.relationship('USER', backref = db.backref('logs'))
+    owner = db.relationship('User', backref = db.backref('logs'))
 
 
-class MAILCONFIG(db.Model):
+class MailConfig(db.Model):
     __tablename__ = 'mailconfig'
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     fromName = db.Column(db.String(10), nullable = False)
@@ -41,4 +50,4 @@ class MAILCONFIG(db.Model):
     toEmail = db.Column(db.String(50), nullable = False)
     ownerId = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    owner = db.relationship('USER', backref = db.backref('mailconfigs'))
+    owner = db.relationship('User', backref = db.backref('mailconfigs'))

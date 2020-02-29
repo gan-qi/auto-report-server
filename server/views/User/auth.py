@@ -1,8 +1,8 @@
 from server import api, redis
 from flask_restful import Resource
 from flask import request, g
-from server.models import USER
-from server.encryption import outputMD5
+from server.models import User
+from server.utils.encryption import outputMD5
 import time
 
 
@@ -14,7 +14,7 @@ class Login(Resource):
         data = request.get_json(force = True)
         username = data.get('username')
         password = data.get('password')
-        user_info_check = USER.query.filter_by(
+        user_info_check = User.query.filter_by(
             username = username,
             password = password
         ).first()
