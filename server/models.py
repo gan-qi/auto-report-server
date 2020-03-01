@@ -16,6 +16,7 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     title = db.Column(db.String(30), nullable = False)
     status = db.Column(db.Integer, nullable = False, default = 0)
+    from_user_id = db.Column(db.Integer, nullable = False)
     time = db.Column(db.String(10), nullable = False,
                      default = str(datetime.now().strftime('%Y-%m-%d')))
     ownerId = db.Column(db.Integer, db.ForeignKey('user.id'))

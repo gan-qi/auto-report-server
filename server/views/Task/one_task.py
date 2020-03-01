@@ -15,7 +15,12 @@ class OptionOneTask(Resource):
 
     def delete(self, taskid):
         target_task = Task.query.filter_by(id = taskid).first()
-        db.session.delete(target_task)
+        mult_tasks = Task.query.filter_by(
+            title = target_task.title,
+            from_user_id = target_task.ownerId
+        ).all()
+        for task in mult_tasks:
+            db.session.delete(task)
         db.session.commit()
         return {
             'code': 20000
@@ -31,9 +36,14 @@ class OptionOneTask(Resource):
         }
         """
         data = request.get_json(force = True)
-        new_task = Task.query.filter_by(id = taskid).first()
-        new_task.title = data.get('title')
-        new_task.status = data.get('status')
+        target_task = Task.query.filter_by(id = taskid).first()
+        mult_tasks = Task.query.filter_by(
+            title = target_task.title,
+            from_user_id = target_task.ownerId
+        ).all()
+        for task in mult_tasks:
+            task.title = data.get('title')
+            task.status = data.get('status')
         db.session.commit()
         return {
             'code': 20000

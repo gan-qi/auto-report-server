@@ -1,9 +1,15 @@
 from server import api, db
-from server.models import Task
+from server.models import Task, User
 from flask import request, g
 from flask_restful import Resource
 
 import datetime
+
+
+def trans_user_id(owner_id, owner_name, from_user_id):
+    if from_user_id != owner_id:
+        return User.query.filter_by(id = from_user_id).first().username
+    return owner_name
 
 
 class OptionTask(Resource):
@@ -25,6 +31,8 @@ class OptionTask(Resource):
             dict(
                 id = item.id,
                 title = item.title,
+                owner_username = item.owner.username,
+                from_username = trans_user_id(item.id, item.owner.username, item.from_user_id),
                 status = item.status,
                 time = item.time,
                 edit = False
@@ -52,7 +60,7 @@ class OptionTask(Resource):
         data = request.get_json(force = True)
         user_list = data.get('user_list')
         for user in user_list:
-            new_task = Task(title = data.get('title'), ownerId = user.get('id'))
+            new_task = Task(title = data.get('title'), ownerId = user.get('id'), from_user_id = g.userId)
             db.session.add(new_task)
         db.session.commit()
         target_task = Task.query.filter_by(
