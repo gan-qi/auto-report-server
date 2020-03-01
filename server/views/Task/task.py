@@ -40,12 +40,20 @@ class OptionTask(Resource):
         """新增任务
 
         data: {
+            'user_list': [
+                {
+                    'id': 1,
+                    'username': 'tom'
+                }
+            ]
             'title': 'xxx',
         }
         """
         data = request.get_json(force = True)
-        new_task = Task(title = data.get('title'), ownerId = g.userId)
-        db.session.add(new_task)
+        user_list = data.get('user_list')
+        for user in user_list:
+            new_task = Task(title = data.get('title'), ownerId = user.get('id'))
+            db.session.add(new_task)
         db.session.commit()
         target_task = Task.query.filter_by(
             title = data.get('title'),
