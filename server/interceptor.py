@@ -21,3 +21,4 @@ def before_request():
             g.token = token
             g.username = user_info.get('username')
             g.userId = user_info.get('id')
+            g.role = user_info.get('role')

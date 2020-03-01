@@ -16,7 +16,7 @@ redis = RedisConn()
 
 from server import commands
 from server import interceptor
-from server.views.User import auth, info
+from server.views.User import auth, info, user_list
 from server.views.Task import one_task, task, tomorrow_task, one_tomorrow_task, advice
 from server.views.Report import submit_report
 from server.views.Mail import mail_config

@@ -29,11 +29,12 @@ class Login(Resource):
             password,
             str(time.time())
         ))
-        # 将信息写入session
+        # 将信息写入redis
         redis.set(token,
                   {
                       'id':       user_info_check.id,
-                      'username': username
+                      'username': username,
+                      'role':     user_info_check.role
                   })
         return {
             'code': 20000,

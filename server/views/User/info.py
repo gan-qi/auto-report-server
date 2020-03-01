@@ -17,7 +17,9 @@ class UserInfo(Resource):
             'code': 20000,
             'data': {
                 'avatar':   '...',
-                'username': user_info.get('username')
+                'username': user_info.get('username'),
+                'role':     user_info.get('role'),
+                'id':       user_info.get('id')
             }
         }
 
