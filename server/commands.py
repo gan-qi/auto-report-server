@@ -28,7 +28,7 @@ def insert():
         click.echo('insert User: %s' % user)
     db.session.commit()
     for item in range(1, 11):
-        newTask = Task(title = "task%s" % (item), ownerId = 1)
+        newTask = Task(title = "task%s" % (item), ownerId = 1, from_user_id = item)
         db.session.add(newTask)
     db.session.commit()
     click.echo('Done.')
