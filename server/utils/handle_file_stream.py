@@ -46,7 +46,8 @@ def handle_file_stream():
                     title = target.title,
                     status = target.status,
                     time = tomorrow_time,
-                    ownerId = g.userId
+                    ownerId = g.userId,
+                    from_user_id = target.from_user_id
                 )
                 db.session.add(tomorrow_task)
                 db.session.commit()
