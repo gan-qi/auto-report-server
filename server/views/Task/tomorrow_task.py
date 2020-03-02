@@ -51,7 +51,8 @@ class OptionTomorrowTask(Resource):
         new_task = Task(
             title = data.get('title'),
             time = self.tomorrow_time,
-            ownerId = g.userId
+            ownerId = g.userId,
+            from_user_id = g.userId
         )
         db.session.add(new_task)
         db.session.commit()
